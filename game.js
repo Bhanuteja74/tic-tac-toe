@@ -24,6 +24,10 @@ class Player {
   addChoice(choice) {
     this.#choices.add(choice);
   }
+
+  removeChoice(choice) {
+    return this.#choices.delete(choice);
+  }
 }
 
 class Players {
@@ -51,6 +55,7 @@ class Players {
 class TicTacToe {
   #moves;
   #players;
+  #canUndo = true;
   #winningCombinations = [
     [1, 2, 3],
     [4, 5, 6],
@@ -74,7 +79,7 @@ class TicTacToe {
   symbol(choice) {
     this.#moves.push(choice);
     this.#players.currentPlayer().addChoice(choice);
-
+    this.#canUndo = true;
     return this.#players.currentPlayer().symbol;
   }
 
@@ -93,6 +98,15 @@ class TicTacToe {
   isDraw() {
     return this.#moves.length === 9;
   }
+
+  undo() {
+    if (!this.#canUndo) return null;
+    const lastMove = this.#moves.pop();
+    this.changeTurn();
+    this.#players.currentPlayer().removeChoice(lastMove);
+    this.#canUndo = false;
+    return lastMove;
+  }
 }
 
 const displayWonMsg = () => {
@@ -103,6 +117,31 @@ const displayDrawMsg = () => {
   alert("draw");
 };
 
+const play = (event, game) => {
+  const target = Number.parseInt(event.target.id);
+  if (game.isChoiceChosen(target)) return;
+  event.target.innerText = game.symbol(target);
+
+  if (game.iswon()) {
+    displayWonMsg();
+    return;
+  }
+
+  if (game.isDraw()) {
+    displayDrawMsg();
+    return;
+  }
+
+  game.changeTurn();
+};
+
+const undoPass = (event, game, board) => {
+  const lastChoice = game.undo();
+  if (lastChoice === null) return;
+  const cell = board.querySelector(`[id="${lastChoice}"]`);
+  cell.innerText = "";
+};
+
 const startGame = () => {
   const player1 = new Player("KBT", "X");
   const player2 = new Player("TEJA", "O");
@@ -110,24 +149,11 @@ const startGame = () => {
   const game = new TicTacToe(players);
 
   const board = document.querySelector(".board");
+  const undoBtn = document.querySelector(".undo");
+  console.log(undoBtn);
 
-  board.addEventListener("click", (event) => {
-    const target = Number.parseInt(event.target.id);
-    if (game.isChoiceChosen(target)) return;
-    event.target.innerText = game.symbol(target);
-
-    if (game.iswon()) {
-      displayWonMsg();
-      return;
-    }
-
-    if (game.isDraw()) {
-      displayDrawMsg();
-      return;
-    }
-
-    game.changeTurn();
-  });
+  board.addEventListener("click", (event) => play(event, game));
+  undoBtn.addEventListener("click", (event) => undoPass(event, game, board));
 };
 
 window.onload = startGame;
