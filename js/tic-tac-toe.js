@@ -72,6 +72,7 @@ class TicTacToe {
 
   reset() {
     this.#moves = [];
+    this.#isGameOver = false;
     this.#players.resetChoices();
   }
 }
